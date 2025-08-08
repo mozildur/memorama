@@ -75,7 +75,7 @@
       pointer-events: none;
       opacity: 0.5;
     }
-    #message, #summary, #score, #highscore, #timer, #share {
+    #message, #summary, #score, #highscore, #timer {
       margin-top: 10px;
       font-size: 1rem;
     }
@@ -132,7 +132,6 @@
   <div id="game"></div>
   <p id="message"></p>
   <p id="summary"></p>
-  <p id="share"></p>
   <button id="copyButton" style="display:none;" onclick="copyShareText()">📋 Copiar mensaje</button>
 
   <audio id="successSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_9e9e5c2b74.mp3"></audio>
@@ -179,7 +178,6 @@
       document.getElementById("score").textContent = "Puntaje: 0";
       document.getElementById("message").textContent = "";
       document.getElementById("summary").textContent = "";
-      document.getElementById("share").textContent = "";
       document.getElementById("copyButton").style.display = "none";
 
       startTimer();
@@ -235,7 +233,6 @@
         const mensaje = `🎉 ¡Completaste el juego con ${score} puntos en ${seconds} segundos! Rango: ${getRank(score)}`;
         document.getElementById("message").textContent = "¡Has encontrado todos los pares! 🧠✨";
         document.getElementById("summary").textContent = mensaje;
-        document.getElementById("share").textContent = mensaje;
         document.getElementById("copyButton").style.display = "inline-block";
 
         const previousHigh = parseInt(localStorage.getItem("memoramaHighscore") || 0);
@@ -255,7 +252,7 @@
     }
 
     function copyShareText() {
-      const text = document.getElementById("share").textContent;
+      const text = document.getElementById("summary").textContent;
       navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById("copyButton");
         btn.textContent = "✅ Copiado";
