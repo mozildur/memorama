@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧠 Memorama del Espíritu Santo</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      background: linear-gradient(to bottom, #ede7f6, #fff);
+      color: #4e3e65;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin-top: 30px;
+      font-size: 2.2rem;
+    }
+    #controls {
+      margin-top: 10px;
+    }
+    #game {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      grid-gap: 12px;
+      max-width: 480px;
+      margin: 30px auto;
+      padding: 0 10px;
+    }
+    .card {
+      width: 100%;
+      height: 100px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      font-weight: bold;
+      font-size: 18px;
+      backface-visibility: hidden;
+    }
+    .card-front {
+      background-color: #b39ddb;
+      color: white;
+    }
+    .card-back {
+      background-color: #9575cd;
+      color: white;
+      transform: rotateY(180deg);
+    }
+    .matched {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    #restart {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #7e57c2;
+      color: white;
+      cursor: pointer;
+    }
+    #restart:hover {
+      background-color: #5e35b1;
+    }
+    #score, #highscore, #timer, #summary, #share {
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+    #copyButton {
+      margin-top: 10px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      background-color: #9575cd;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #copyButton:hover {
+      background-color: #7e57c2;
+    }
+    footer {
+      margin: 40px auto;
+      font-size: 0.9rem;
+      color: #7b5aa4;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Memorama del Espíritu Santo</h1>
+  <p>Encuentra los pares de conceptos de <strong>Un Curso de Milagros</strong> y deja que el recuerdo de la Verdad se revele. ✨</p>
+  <div id="controls">
+    <label>Nivel: 
+      <select id="difficulty">
+        <option value="4">Fácil (4 pares)</option>
+        <option value="6">Intermedio (6 pares)</option>
+        <option value="8" selected>Avanzado (8 pares)</option>
+      </select>
+    </label>
+    <button id="restart" onclick="startGame()">🔄 Reiniciar juego</button>
+  </div>
+
+  <p id="score"></p>
+  <p id="timer"></p>
+  <p id="highscore"></p>
+  <div id="game"></div>
+  <p id="message"></p>
+  <p id="summary"></p>
+  <p id="share"></p>
+  <textarea id="copyTextArea" style="position:absolute;left:-9999px;top:-9999px;"></textarea>
+  <button id="copyButton" style="display:none;" onclick="copyShareText()">📋 Copiar mensaje</button>
+
+  <audio id="successSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_9e9e5c2b74.mp3"></audio>
+  <audio id="winSound" src="https://cdn.pixabay.com/audio/2021/08/09/audio_c8972b8897.mp3"></audio>
+  <audio id="failSound" src="https://cdn.pixabay.com/audio/2022/03/23/audio_e1e1e5b8bb.mp3"></audio>
+
+  <footer>
+    Hecho con milagros, risas y código por <strong>MoZ ✨</strong><br>
+    Inspirado en <em>Un Curso de Milagros</em> y los recordatorios del Espíritu Santo.<br>
+    Sonidos de <a href="https://pixabay.com/es/" target="_blank">Pixabay</a>.
+  </footer>
+
+  <script>
+    const terms = [
+      "Perdón", "Paz", "Ego", "Milagro", "Expiación", "Amor", "Santidad", "Unidad",
+      "Verdad", "Juicio", "Mente", "Luz", "Guía", "Cristo", "Ilusión", "Gratitud"
+    ];
+
+    let flippedCards = [];
+    let matchedCards = 0;
+    let score = 0;
+    let totalPairs = 8;
+
+    function startGame() {
+      const gameBoard = document.getElementById("game");
+      const difficulty = parseInt(document.getElementById("difficulty").value);
+      totalPairs = difficulty;
+
+      // Reiniciar variables
+      gameBoard.innerHTML = "";
+      flippedCards = [];
+      matchedCards = 0;
+      score = 0;
+      document.getElementById("score").textContent = "Puntaje: 0";
+      document.getElementById("message").textContent = "";
+      document.getElementById("summary").textContent = "";
+      document.getElementById("share").textContent = "";
+      document.getElementById("copyButton").style.display = "none";
+
+      const selectedTerms = terms.sort(() => 0.5 - Math.random()).slice(0, totalPairs);
+      const cardContents = [...selectedTerms, ...selectedTerms].sort(() => 0.5 - Math.random());
+
+      cardContents.forEach(text => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-inner">
+            <div class="card-front">?</div>
+            <div class="card-back">${text}</div>
+          </div>
+        `;
+        card.addEventListener("click", () => flipCard(card, text));
+        gameBoard.appendChild(card);
+      });
+    }
+
+    function flipCard(card, value) {
+      if (card.classList.contains("flipped") || flippedCards.length === 2) return;
+
+      card.classList.add("flipped");
+      flippedCards.push({ card, value });
+
+      if (flippedCards.length === 2) {
+        const [first, second] = flippedCards;
+        if (first.value === second.value) {
+          document.getElementById("successSound").play();
+          matchedCards++;
+          score += 10;
+          first.card.classList.add("matched");
+          second.card.classList.add("matched");
+          flippedCards = [];
+        } else {
+          document.getElementById("failSound").play();
+          setTimeout(() => {
+            first.card.classList.remove("flipped");
+            second.card.classList.remove("flipped");
+            flippedCards = [];
+          }, 800);
+        }
+        document.getElementById("score").textContent = `Puntaje: ${score}`;
+      }
+
+      if (matchedCards === totalPairs) {
+        document.getElementById("winSound").play();
+        const mensaje = `🎉 ¡Completaste el juego con ${score} puntos! Rango: ${getRank(score)}`;
+        document.getElementById("message").textContent = "¡Has encontrado todos los pares! 🧠✨";
+        document.getElementById("summary").textContent = mensaje;
+        document.getElementById("share").textContent = mensaje;
+        document.getElementById("copyButton").style.display = "inline-block";
+      }
+    }
+
+    function getRank(score) {
+      if (score >= 80) return "🟣 Fray Barucio Legendario";
+      if (score >= 60) return "🔵 Cristo Ninja";
+      if (score >= 40) return "🟢 Estudiante Avanzado";
+      if (score >= 20) return "🟡 Milagronauta en Práctica";
+      return "🔴 Ego en modo Archibaldo";
+    }
+
+    function copyShareText() {
+      const text = document.getElementById("share").textContent;
+      const textarea = document.getElementById("copyTextArea");
+      textarea.value = text;
+      textarea.select();
+      document.execCommand("copy");
+      const btn = document.getElementById("copyButton");
+      btn.textContent = "✅ Copiado";
+      setTimeout(() => {
+        btn.textContent = "📋 Copiar mensaje";
+      }, 2000);
+    }
+
+    window.onload = startGame;
+  </script>
+</body>
+</html>
