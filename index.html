@@ -34,6 +34,11 @@
       perspective: 1000px;
       cursor: pointer;
     }
+    @media(min-width: 600px) {
+      .card {
+        height: 140px;
+      }
+    }
     .card-inner {
       width: 100%;
       height: 100%;
@@ -70,10 +75,9 @@
       pointer-events: none;
       opacity: 0.5;
     }
-    #message {
-      margin-top: 20px;
-      font-size: 1.2rem;
-      font-weight: bold;
+    #message, #summary, #score, #highscore, #timer, #share {
+      margin-top: 10px;
+      font-size: 1rem;
     }
     #restart {
       margin-top: 20px;
@@ -87,10 +91,6 @@
     }
     #restart:hover {
       background-color: #5e35b1;
-    }
-    #score, #highscore, #timer, #summary, #share {
-      margin-top: 10px;
-      font-size: 1rem;
     }
     #copyButton {
       margin-top: 10px;
@@ -133,7 +133,6 @@
   <p id="message"></p>
   <p id="summary"></p>
   <p id="share"></p>
-  <textarea id="copyTextArea" style="position:absolute;left:-9999px;top:-9999px;"></textarea>
   <button id="copyButton" style="display:none;" onclick="copyShareText()">📋 Copiar mensaje</button>
 
   <audio id="successSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_9e9e5c2b74.mp3"></audio>
@@ -147,22 +146,32 @@
   </footer>
 
   <script>
-    const terms = [
-      "Perdón", "Paz", "Ego", "Milagro", "Expiación", "Amor", "Santidad", "Unidad",
-      "Verdad", "Juicio", "Mente", "Luz", "Guía", "Cristo", "Ilusión", "Gratitud"
-    ];
-
+    const terms = ["Perdón", "Paz", "Ego", "Milagro", "Expiación", "Amor", "Santidad", "Unidad", "Verdad", "Juicio", "Mente", "Luz", "Guía", "Cristo", "Ilusión", "Gratitud"];
     let flippedCards = [];
     let matchedCards = 0;
     let score = 0;
     let totalPairs = 8;
+    let timerInterval;
+    let seconds = 0;
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      seconds = 0;
+      timerInterval = setInterval(() => {
+        seconds++;
+        document.getElementById("timer").textContent = `⏱️ Tiempo: ${seconds}s`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
 
     function startGame() {
       const gameBoard = document.getElementById("game");
       const difficulty = parseInt(document.getElementById("difficulty").value);
       totalPairs = difficulty;
 
-      // Reiniciar variables
       gameBoard.innerHTML = "";
       flippedCards = [];
       matchedCards = 0;
@@ -173,7 +182,8 @@
       document.getElementById("share").textContent = "";
       document.getElementById("copyButton").style.display = "none";
 
-      const selectedTerms = terms.sort(() => 0.5 - Math.random()).slice(0, totalPairs);
+      startTimer();
+      const selectedTerms = [...terms].sort(() => 0.5 - Math.random()).slice(0, totalPairs);
       const cardContents = [...selectedTerms, ...selectedTerms].sort(() => 0.5 - Math.random());
 
       cardContents.forEach(text => {
@@ -188,10 +198,13 @@
         card.addEventListener("click", () => flipCard(card, text));
         gameBoard.appendChild(card);
       });
+
+      const highscore = localStorage.getItem("memoramaHighscore") || 0;
+      document.getElementById("highscore").textContent = `🏆 Mejor puntaje: ${highscore}`;
     }
 
     function flipCard(card, value) {
-      if (card.classList.contains("flipped") || flippedCards.length === 2) return;
+      if (card.classList.contains("flipped") || flippedCards.length === 2 || flippedCards.find(c => c.card === card)) return;
 
       card.classList.add("flipped");
       flippedCards.push({ card, value });
@@ -217,12 +230,19 @@
       }
 
       if (matchedCards === totalPairs) {
+        stopTimer();
         document.getElementById("winSound").play();
-        const mensaje = `🎉 ¡Completaste el juego con ${score} puntos! Rango: ${getRank(score)}`;
+        const mensaje = `🎉 ¡Completaste el juego con ${score} puntos en ${seconds} segundos! Rango: ${getRank(score)}`;
         document.getElementById("message").textContent = "¡Has encontrado todos los pares! 🧠✨";
         document.getElementById("summary").textContent = mensaje;
         document.getElementById("share").textContent = mensaje;
         document.getElementById("copyButton").style.display = "inline-block";
+
+        const previousHigh = parseInt(localStorage.getItem("memoramaHighscore") || 0);
+        if (score > previousHigh) {
+          localStorage.setItem("memoramaHighscore", score);
+          document.getElementById("highscore").textContent = `🏆 Nuevo récord: ${score}`;
+        }
       }
     }
 
@@ -236,15 +256,13 @@
 
     function copyShareText() {
       const text = document.getElementById("share").textContent;
-      const textarea = document.getElementById("copyTextArea");
-      textarea.value = text;
-      textarea.select();
-      document.execCommand("copy");
-      const btn = document.getElementById("copyButton");
-      btn.textContent = "✅ Copiado";
-      setTimeout(() => {
-        btn.textContent = "📋 Copiar mensaje";
-      }, 2000);
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("copyButton");
+        btn.textContent = "✅ Copiado";
+        setTimeout(() => {
+          btn.textContent = "📋 Copiar mensaje";
+        }, 2000);
+      });
     }
 
     window.onload = startGame;
