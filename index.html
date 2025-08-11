@@ -1,249 +1,319 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>🧠 Memorama del Espíritu Santo</title>
+  <meta name="color-scheme" content="light dark" />
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    :root{
+      --bg: linear-gradient(to bottom, #ede7f6, #fff);
+      --fg: #4e3e65;
+      --accent: #7e57c2;
+      --accent-2: #9575cd;
+      --card-front: #b39ddb;
+      --space: clamp(10px, 2.5vmin, 20px);
+      --radius: 12px;
+      --shadow: 0 4px 10px rgba(0,0,0,.12);
+      --fs-body: clamp(14px, 1.3vw, 18px);
+      --fs-h1: clamp(22px, 3.5vw, 34px);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      font-size: var(--fs-body);
+      line-height:1.45;
+      color: var(--fg);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container{
+      max-width: min(1100px, 100% - 2*var(--space));
+      margin-inline: auto;
+      padding: var(--space);
       text-align: center;
-      background: linear-gradient(to bottom, #ede7f6, #fff);
-      color: #4e3e65;
-      margin: 0;
-      padding: 0;
     }
-    h1 {
-      margin-top: 30px;
-      font-size: 2.2rem;
+
+    h1{
+      margin: calc(var(--space) * 1.2) 0 var(--space) 0;
+      font-size: var(--fs-h1);
     }
-    #controls {
-      margin-top: 10px;
+
+    p.lead{margin:0 auto var(--space); max-width:65ch}
+
+    #controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap: var(--space);
+      justify-content:center;
+      align-items:center;
+      margin-top: var(--space);
     }
-    #game {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      grid-gap: 12px;
-      max-width: 480px;
-      margin: 30px auto;
-      padding: 0 10px;
+
+    select, button{
+      font: inherit;
+      padding: .65em 1em;
+      border-radius: 10px;
+      border: 1px solid color-mix(in oklab, var(--accent), black 15%);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      background: var(--accent);
+      color: #fff;
+      min-height: 44px; /* objetivo táctil accesible */
+      touch-action: manipulation;
     }
-    .card {
-      width: 100%;
-      height: 100px;
+    select{background: #fff; color: var(--fg)}
+    button#restart{background: var(--accent); border-color: transparent}
+    button#restart:hover{filter: brightness(.95)}
+
+    /* Info row */
+    .info{ display:flex; flex-wrap:wrap; gap: .75rem; justify-content:center; margin-top:.5rem }
+    .pill{ padding: .4rem .7rem; border-radius: 999px; background: #fff; box-shadow: var(--shadow); }
+
+    /* Game grid */
+    #game{
+      display:grid;
+      gap: clamp(8px, 1.6vmin, 14px);
+      grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+      max-width: min(720px, 100%);
+      margin: calc(var(--space) * 1.6) auto;
+    }
+
+    .card{
+      aspect-ratio: 2 / 3; /* se adapta solo a cualquier ancho */
       perspective: 1000px;
       cursor: pointer;
-    }
-    @media(min-width: 600px) {
-      .card {
-        height: 140px;
-      }
-    }
-    .card-inner {
-      width: 100%;
-      height: 100%;
       position: relative;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      border-radius: var(--radius);
+    }
+    .card:focus-visible{ box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), white 30%); }
+
+    .card-inner{
+      position:absolute; inset:0;
       transform-style: preserve-3d;
-      transition: transform 0.6s;
+      transition: transform .6s;
+      border-radius: var(--radius);
     }
-    .card.flipped .card-inner {
-      transform: rotateY(180deg);
-    }
-    .card-front, .card-back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      font-weight: bold;
-      font-size: 18px;
+    .card.flipped .card-inner{ transform: rotateY(180deg); }
+
+    .face{
+      position:absolute; inset:0;
+      display:grid; place-items:center;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      font-weight: 700; font-size: clamp(14px, 2.4vmin, 20px);
       backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      padding: .6rem;
+      text-wrap: balance;
     }
-    .card-front {
-      background-color: #b39ddb;
-      color: white;
+    .card-front{ background: var(--card-front); color:#fff }
+    .card-back{ background: var(--accent-2); color:#fff; transform: rotateY(180deg) }
+
+    .matched{ pointer-events:none; opacity:.55; }
+
+    #message{ min-height:1.2em }
+
+    footer{
+      margin: calc(var(--space) * 2) auto;
+      font-size: .95em;
+      color: color-mix(in oklab, var(--fg), #000 20%);
     }
-    .card-back {
-      background-color: #9575cd;
-      color: white;
-      transform: rotateY(180deg);
+    footer a{ color: inherit }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg: linear-gradient(to bottom, #0f0b17, #0b0b0f);
+        --fg: #efe9ff;
+        --accent: #6f53c7;
+        --accent-2: #5f45b8;
+        --card-front: #7b68d1;
+        --shadow: 0 4px 10px rgba(0,0,0,.35);
+      }
+      select{background:#131221; color: var(--fg); border-color:#2a2750}
+      .pill{ background:#131221 }
     }
-    .matched {
-      pointer-events: none;
-      opacity: 0.5;
+
+    /* Reduce motion */
+    @media (prefers-reduced-motion: reduce){
+      .card-inner{ transition: none }
     }
-    #message, #summary, #score, #highscore, #timer {
-      margin-top: 10px;
-      font-size: 1rem;
-    }
-    #restart {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 5px;
-      background-color: #7e57c2;
-      color: white;
-      cursor: pointer;
-    }
-    #restart:hover {
-      background-color: #5e35b1;
-    }
-    #copyButton {
-      margin-top: 10px;
-      padding: 6px 12px;
-      font-size: 0.9rem;
-      background-color: #9575cd;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #copyButton:hover {
-      background-color: #7e57c2;
-    }
-    footer {
-      margin: 40px auto;
-      font-size: 0.9rem;
-      color: #7b5aa4;
+
+    /* Slightly denser grid on big screens */
+    @media (min-width: 900px){
+      #game{ grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); max-width: 820px }
     }
   </style>
 </head>
 <body>
-  <h1>🧠 Memorama del Espíritu Santo</h1>
-  <p>Encuentra los pares de conceptos de <strong>Un Curso de Milagros</strong> y deja que el recuerdo de la Verdad se revele. ✨</p>
-  <div id="controls">
-    <label>Nivel: 
-      <select id="difficulty">
+  <main class="container">
+    <h1>🧠 Memorama del Espíritu Santo</h1>
+    <p class="lead">Encuentra los pares de conceptos de <strong>Un Curso de Milagros</strong> y deja que el recuerdo de la Verdad se revele. ✨</p>
+
+    <div id="controls" role="group" aria-label="Controles del juego">
+      <label for="difficulty">Nivel:</label>
+      <select id="difficulty" name="difficulty" aria-label="Selecciona dificultad">
         <option value="4">Fácil (4 pares)</option>
         <option value="6">Intermedio (6 pares)</option>
         <option value="8" selected>Avanzado (8 pares)</option>
       </select>
-    </label>
-    <button id="restart" onclick="startGame()">🔄 Reiniciar juego</button>
-  </div>
+      <button id="restart" type="button">🔄 Reiniciar juego</button>
+    </div>
 
-  <p id="score"></p>
-  <p id="timer"></p>
-  <p id="highscore"></p>
-  <div id="game"></div>
-  <p id="message"></p>
-  <p id="summary"></p>
-  <button id="copyButton" style="display:none;" onclick="copyShareText()">📋 Copiar mensaje</button>
+    <div class="info" aria-live="polite">
+      <span id="score" class="pill">Puntaje: 0</span>
+      <span id="timer" class="pill">⏱️ Tiempo: 00:00</span>
+      <span id="highscore" class="pill">🏆 Mejor puntaje: 0</span>
+    </div>
 
-  <audio id="successSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_9e9e5c2b74.mp3"></audio>
-  <audio id="winSound" src="https://cdn.pixabay.com/audio/2021/08/09/audio_c8972b8897.mp3"></audio>
-  <audio id="failSound" src="https://cdn.pixabay.com/audio/2022/03/23/audio_e1e1e5b8bb.mp3"></audio>
+    <section id="game" aria-label="Tablero de cartas" aria-live="polite"></section>
 
-  <footer>
-    Hecho con milagros, risas y código por <strong>MoZ ✨</strong><br>
-    Inspirado en <em>Un Curso de Milagros</em> y los recordatorios del Espíritu Santo.<br>
-    Sonidos de <a href="https://pixabay.com/es/" target="_blank">Pixabay</a>.
-  </footer>
+    <p id="message" aria-live="polite"></p>
+    <p id="summary"></p>
+
+    <audio id="successSound" preload="auto" src="https://cdn.pixabay.com/audio/2022/03/15/audio_9e9e5c2b74.mp3"></audio>
+    <audio id="winSound" preload="auto" src="https://cdn.pixabay.com/audio/2021/08/09/audio_c8972b8897.mp3"></audio>
+    <audio id="failSound" preload="auto" src="https://cdn.pixabay.com/audio/2022/03/23/audio_e1e1e5b8bb.mp3"></audio>
+
+    <footer>
+      Hecho con milagros, risas y código por <strong>MoZ ✨</strong><br>
+      Inspirado en <em>Un Curso de Milagros</em> y los recordatorios del Espíritu Santo.<br>
+      Sonidos de <a href="https://pixabay.com/es/" target="_blank" rel="noopener noreferrer">Pixabay</a>.
+    </footer>
+  </main>
 
   <script>
-    const terms = ["Perdón", "Paz", "Ego", "Milagro", "Expiación", "Amor", "Santidad", "Unidad", "Verdad", "Juicio", "Mente", "Luz", "Guía", "Cristo", "Ilusión", "Gratitud"];
-    let flippedCards = [];
-    let matchedCards = 0;
+    const terms = [
+      "Perdón", "Paz", "Ego", "Milagro", "Expiación", "Amor", "Santidad", "Unidad",
+      "Verdad", "Juicio", "Mente", "Luz", "Guía", "Cristo", "Ilusión", "Gratitud"
+    ];
+
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    let flipped = [];
+    let matched = 0;
     let score = 0;
     let totalPairs = 8;
-    let timerInterval;
-    let seconds = 0;
+    let timerInterval; let seconds = 0; let gameOver = false;
 
-    function startTimer() {
+    const elGame = $("#game");
+    const elScore = $("#score");
+    const elTimer = $("#timer");
+    const elHigh = $("#highscore");
+    const elMsg = $("#message");
+    const elSummary = $("#summary");
+    const elRestart = $("#restart");
+    const elDiff = $("#difficulty");
+
+    const sfx = {
+      ok: $("#successSound"),
+      win: $("#winSound"),
+      fail: $("#failSound"),
+    };
+
+    function fmtTime(s){
+      const m = Math.floor(s/60).toString().padStart(2, '0');
+      const r = (s%60).toString().padStart(2, '0');
+      return `${m}:${r}`;
+    }
+
+    function startTimer(){
       clearInterval(timerInterval);
-      seconds = 0;
-      timerInterval = setInterval(() => {
-        seconds++;
-        document.getElementById("timer").textContent = `⏱️ Tiempo: ${seconds}s`;
+      seconds = 0; elTimer.textContent = `⏱️ Tiempo: ${fmtTime(seconds)}`;
+      timerInterval = setInterval(()=>{
+        seconds++; elTimer.textContent = `⏱️ Tiempo: ${fmtTime(seconds)}`;
       }, 1000);
     }
+    function stopTimer(){ clearInterval(timerInterval); }
 
-    function stopTimer() {
-      clearInterval(timerInterval);
-    }
-
-    function startGame() {
-      const gameBoard = document.getElementById("game");
-      const difficulty = parseInt(document.getElementById("difficulty").value);
-      totalPairs = difficulty;
-
-      gameBoard.innerHTML = "";
-      flippedCards = [];
-      matchedCards = 0;
-      score = 0;
-      document.getElementById("score").textContent = "Puntaje: 0";
-      document.getElementById("message").textContent = "";
-      document.getElementById("summary").textContent = "";
-      document.getElementById("copyButton").style.display = "none";
+    function startGame(){
+      gameOver = false;
+      totalPairs = parseInt(elDiff.value, 10);
+      elGame.innerHTML = "";
+      flipped = []; matched = 0; score = 0;
+      elScore.textContent = "Puntaje: 0";
+      elMsg.textContent = ""; elSummary.textContent = "";
 
       startTimer();
-      const selectedTerms = [...terms].sort(() => 0.5 - Math.random()).slice(0, totalPairs);
-      const cardContents = [...selectedTerms, ...selectedTerms].sort(() => 0.5 - Math.random());
+      const selected = [...terms].sort(()=> Math.random() - .5).slice(0, totalPairs);
+      const deck = [...selected, ...selected].sort(()=> Math.random() - .5);
 
-      cardContents.forEach(text => {
-        const card = document.createElement("div");
-        card.className = "card";
+      for(const text of deck){
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'card';
+        card.setAttribute('aria-label', 'Carta');
         card.innerHTML = `
           <div class="card-inner">
-            <div class="card-front">?</div>
-            <div class="card-back">${text}</div>
-          </div>
-        `;
-        card.addEventListener("click", () => flipCard(card, text));
-        gameBoard.appendChild(card);
-      });
+            <div class="face card-front">?</div>
+            <div class="face card-back">${text}</div>
+          </div>`;
+        card.dataset.value = text;
+        elGame.appendChild(card);
+      }
 
-      const highscore = localStorage.getItem("memoramaHighscore") || 0;
-      document.getElementById("highscore").textContent = `🏆 Mejor puntaje: ${highscore}`;
+      const high = parseInt(localStorage.getItem('memoramaHighscore') || 0, 10);
+      elHigh.textContent = `🏆 Mejor puntaje: ${high}`;
     }
 
-    function flipCard(card, value) {
-      if (card.classList.contains("flipped") || flippedCards.length === 2 || flippedCards.find(c => c.card === card)) return;
+    // Delegación de eventos para mejor rendimiento
+    elGame.addEventListener('click', (ev)=>{
+      const card = ev.target.closest('.card');
+      if(!card || gameOver) return;
+      flipCard(card);
+    });
 
-      card.classList.add("flipped");
-      flippedCards.push({ card, value });
+    function flipCard(card){
+      if(card.classList.contains('flipped')) return;
+      if(flipped.length === 2) return;
 
-      if (flippedCards.length === 2) {
-        const [first, second] = flippedCards;
-        if (first.value === second.value) {
-          document.getElementById("successSound").play();
-          matchedCards++;
-          score += 10;
-          first.card.classList.add("matched");
-          second.card.classList.add("matched");
-          flippedCards = [];
+      card.classList.add('flipped');
+      flipped.push(card);
+
+      if(flipped.length === 2){
+        const [a,b] = flipped;
+        const match = a.dataset.value === b.dataset.value;
+        if(match){
+          sfx.ok.currentTime = 0; sfx.ok.play().catch(()=>{});
+          matched++; score += 10;
+          a.classList.add('matched'); b.classList.add('matched');
+          flipped = [];
         } else {
-          document.getElementById("failSound").play();
-          setTimeout(() => {
-            first.card.classList.remove("flipped");
-            second.card.classList.remove("flipped");
-            flippedCards = [];
+          sfx.fail.currentTime = 0; sfx.fail.play().catch(()=>{});
+          setTimeout(()=>{
+            a.classList.remove('flipped');
+            b.classList.remove('flipped');
+            flipped = [];
           }, 800);
         }
-        document.getElementById("score").textContent = `Puntaje: ${score}`;
+        elScore.textContent = `Puntaje: ${score}`;
       }
 
-      if (matchedCards === totalPairs) {
+      if(matched === totalPairs && !gameOver){
+        gameOver = true;
         stopTimer();
-        document.getElementById("winSound").play();
+        sfx.win.currentTime = 0; sfx.win.play().catch(()=>{});
         const mensaje = `🎉 ¡Completaste el juego con ${score} puntos en ${seconds} segundos! Rango: ${getRank(score)}`;
-        document.getElementById("message").textContent = "¡Has encontrado todos los pares! 🧠✨";
-        document.getElementById("summary").textContent = mensaje;
-        document.getElementById("copyButton").style.display = "inline-block";
+        elMsg.textContent = "¡Has encontrado todos los pares! 🧠✨";
+        elSummary.textContent = mensaje;
 
-        const previousHigh = parseInt(localStorage.getItem("memoramaHighscore") || 0);
-        if (score > previousHigh) {
-          localStorage.setItem("memoramaHighscore", score);
-          document.getElementById("highscore").textContent = `🏆 Nuevo récord: ${score}`;
+        const prev = parseInt(localStorage.getItem('memoramaHighscore') || 0, 10);
+        if(score > prev){
+          localStorage.setItem('memoramaHighscore', String(score));
+          elHigh.textContent = `🏆 Nuevo récord: ${score}`;
         }
       }
     }
 
-    function getRank(score) {
+    function getRank(score){
       if (score >= 80) return "🟣 Fray Barucio Legendario";
       if (score >= 60) return "🔵 Cristo Ninja";
       if (score >= 40) return "🟢 Estudiante Avanzado";
@@ -251,18 +321,8 @@
       return "🔴 Ego en modo Archibaldo";
     }
 
-    function copyShareText() {
-      const text = document.getElementById("summary").textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        const btn = document.getElementById("copyButton");
-        btn.textContent = "✅ Copiado";
-        setTimeout(() => {
-          btn.textContent = "📋 Copiar mensaje";
-        }, 2000);
-      });
-    }
-
-    window.onload = startGame;
+    elRestart.addEventListener('click', startGame);
+    window.addEventListener('load', startGame);
   </script>
 </body>
 </html>
